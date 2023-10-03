@@ -1,87 +1,127 @@
 #include <iostream>
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+using namespace std;
 
-// Function to perform shell sort with Hibbard increment sequence
-void shell_sort_hibbard(int arr[], int n)
+void shellsorthibbard(int arr[], int n, int k) {
+
+    // perform shell sort using Hibbard increments
+    while (k >= 0) {
+        // calculate the current increment value
+        int h = pow(2, k) - 1;
+
+        // perform insertion sort for elements separated by h
+        for (int i = h; i < n; i++) {
+            int temp = arr[i];
+            int j = i;
+            while (j >= h && arr[j - h] > temp) {
+                arr[j] = arr[j - h];
+                j -= h;
+            }
+            arr[j] = temp;
+        }
+
+        // decrement k to get the next increment value
+        k--;
+    }
+}
+
+void shellSortSedgewick(int arr[], int n, int h)
 {
-    // Initialize the increment sequence
-    int h = 1;
-
-    // Calculate the next value in the sequence
-    while (h < n / 3)
-        h = 3 * h + 1;
 
     // Perform insertion sort with increment h
     while (h >= 1)
     {
         // Perform insertion sort for sublist arr[i, i+h, i+2*h, ...]
-        for (int i = h; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
             int key = arr[i];
             int j = i;
-
-            // Shift elements of arr[0..i-1], that are greater than key,
-            // to one position ahead of their current position
             while (j >= h && arr[j - h] > key)
             {
                 arr[j] = arr[j - h];
                 j -= h;
             }
-
-            // Put the key in its correct position
             arr[j] = key;
         }
 
-        // Calculate the next value in the sequence
-        h /= 3;
+        // Calculate the next value in the Sedgewick increment sequence
+        h = (h - 1) / 3;
     }
 }
 
-template <typename T>
-void shellSortSedgewick(T arr[], int n)
-{
-    // Calculate the increment sequence
-    int inc = 1;
-    while (inc < n / 3)
-        inc = 3 * inc + 1;
+int* randomgen(int n) {
+    srand(time(0));
 
-    // Starting with the largest increment value
-    while (inc >= 1)
-    {
-        for (int i = inc; i < n; i++)
-        {
-            // Insertion sort for the current increment
-            T temp = arr[i];
-            int j = i;
-            while (j >= inc && arr[j - inc] > temp)
-            {
-                arr[j] = arr[j - inc];
-                j -= inc;
-            }
-            arr[j] = temp;
-        }
-        inc /= 3;
+    int* arr = new int[n];
+
+    for (int i = 0; i < n; i++) {
+        arr[i] = rand() % 100 + 1;
     }
+
+    // Return the array
+    return arr;
 }
 
+int* randomgendes(int n) {
+    srand(time(0));
 
-// Test program
+    int* arr = new int[n];
+
+    for (int i = 0; i < n; i++) {
+        arr[i] = rand() % 100 + 1; 
+    }
+
+    sort(arr, arr + n, greater<int>());
+
+    return arr;
+}
+
 int main()
 {
-    int arr1[] = { 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7 };
-    int arr[] = { 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7, 5, 4, 3, 2, 1, 5, 5, 5, 6, 7 };
-    int n = sizeof(arr) / sizeof(arr[0]);
-    int m = sizeof(arr1) / sizeof(arr1[0]);
+    int n = 20000;
+    int h = 1;
+    while (h < n)
+    {
+        h = (4 << h) + 3 * (2 << (h - 1)) + 1;
+    }
+    int k = 1;
+    while (pow(2, k) - 1 < n) {
+        k++;
+    }
 
-    // Perform shell sort with Hibbard increment sequence
-    shell_sort_hibbard(arr, n);
-    shellSortSedgewick(arr1, m);
+    // decrement k to get the largest Hibbard increment value less than n
+    k--;
+    
+    
+    for(int i = 0; i < 10; i++)
+    {
+        int *arr = randomgen(n);
+        int *arr1 = randomgendes(n);
+        auto start = chrono::high_resolution_clock::now();
+        shellsorthibbard(arr, n, k);
+        auto end = chrono::high_resolution_clock::now();
+        cout << "Hibbard data 1 TIME: " << chrono::duration<double, micro>(end - start).count() << endl;
+     
+        auto start2 = chrono::high_resolution_clock::now();
+        shellSortSedgewick(arr, n, h);
+        auto end2 = chrono::high_resolution_clock::now();
+        cout << "Sedgewick data 1 TIME: " << chrono::duration<double, micro>(end2 - start2).count() << "\n\n";
 
-    // Print the sorted array
-    for (int i = 0; i < n; i++)
-        std::cout << arr[i] << " ";
-    std::cout << "\n";
-    for (int i = 0; i < m; i++)
-        std::cout << arr1[i] << " ";
-    std::cout << "\n";
+        auto start1 = chrono::high_resolution_clock::now();
+        shellsorthibbard(arr1, n, k);
+        auto end1 = chrono::high_resolution_clock::now();
+        cout << "Hibbard data 2 time: " << chrono::duration<double, micro>(end1 - start1).count() << endl;
+        
+        auto start3 = chrono::high_resolution_clock::now();
+        shellSortSedgewick(arr1, n, h);
+        auto end3 = chrono::high_resolution_clock::now();
+        cout << "Sedgewick data 2 TIME: " << chrono::duration<double, micro>(end3 - start3).count() << "\n###################################################################\n";
+
+        delete[] arr;
+        delete[] arr1;
+    }
     return 0;
 }
